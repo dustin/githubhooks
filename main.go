@@ -1,0 +1,122 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+)
+
+type interestingList map[string][]string
+
+type allInteresting struct {
+	ByActor     interestingList
+	ByOwner     interestingList
+	ByOwnerRepo interestingList
+}
+
+var interestingConfig allInteresting
+
+type event struct {
+	Seq int64
+	Id  string
+	Doc map[string]interface{}
+
+	actor     string
+	owner     string
+	repo      string
+	eventType string
+}
+
+func logEvent(ch <-chan event) {
+	for _ = range ch {
+		/*
+			log.Printf("%v - %v/%v (%v)", thing.eventType, thing.owner,
+				thing.repo, thing.actor)
+		*/
+	}
+}
+
+func byActor(ch <-chan event) {
+	interesting := interestingConfig.ByActor
+	for thing := range ch {
+		if list, ok := interesting[thing.actor]; ok {
+			log.Printf("Handling byActor %v event for actor %v in %v/%v to %v",
+				thing.eventType, thing.actor, thing.owner, thing.repo,
+				list)
+		}
+	}
+}
+
+func byOwnerRepo(ch <-chan event) {
+	interesting := interestingConfig.ByOwnerRepo
+	for thing := range ch {
+		k := fmt.Sprintf("%v/%v", thing.owner, thing.repo)
+		if list, ok := interesting[k]; ok {
+			log.Printf("Handling byOwnerRepo %v event in repo %v/%v by %v to %v",
+				thing.eventType, thing.owner, thing.repo, thing.actor, list)
+		}
+	}
+}
+
+func byOwner(ch <-chan event) {
+	interesting := interestingConfig.ByOwner
+	for thing := range ch {
+		if list, ok := interesting[thing.owner]; ok {
+			log.Printf("Handling byOwner %v event in repo %v/%v by %v to %v",
+				thing.eventType, thing.owner, thing.repo, thing.actor, list)
+		}
+	}
+}
+
+func dispatcher(ch <-chan event) {
+
+	channels := map[string]chan event{}
+	handlers := map[string]func(<-chan event){
+		"log":         logEvent,
+		"byactor":     byActor,
+		"byowner":     byOwner,
+		"byownerrepo": byOwnerRepo,
+	}
+
+	for name, fun := range handlers {
+		c := make(chan event, 1000)
+		go fun(c)
+		channels[name] = c
+	}
+
+	for thing := range ch {
+		switch i := thing.Doc["repository"].(type) {
+		case map[string]interface{}:
+			thing.owner = fmt.Sprintf("%v", i["owner"])
+			thing.repo = fmt.Sprintf("%v", i["name"])
+		}
+		switch i := thing.Doc["actor"].(type) {
+		case string:
+			thing.actor = i
+		}
+		thing.eventType = thing.Doc["type"].(string)
+
+		for _, c := range channels {
+			c <- thing
+		}
+	}
+}
+
+func loadInteresting() {
+	f, err := os.Open("config.json")
+	maybefatal(err, "Error opening config: %v", err)
+	defer f.Close()
+
+	d := json.NewDecoder(f)
+	err = d.Decode(&interestingConfig)
+	maybefatal(err, "Error reading config: %v", err)
+}
+
+func main() {
+	loadInteresting()
+	ch := make(chan event, 1000)
+	go dispatcher(ch)
+
+	monitorDB(ch)
+}
