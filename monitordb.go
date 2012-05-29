@@ -30,8 +30,8 @@ func feedBody(r io.Reader, results chan<- event) int64 {
 	return largest
 }
 
-func monitorDB(ch chan<- event) {
-	db, err := couch.Connect("http://single.couchbase.net/github")
+func monitorDB(dburl string, ch chan<- event) {
+	db, err := couch.Connect(dburl)
 	maybefatal(err, "Error connecting: %v", err)
 
 	info, err := db.GetInfo()

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -118,10 +119,12 @@ func dispatcher(ch <-chan event) {
 		case string:
 			thing.actor = i
 		}
-		thing.eventType = thing.Doc["type"].(string)
-
-		for _, c := range channels {
-			c <- thing
+		et, ok := thing.Doc["type"].(string)
+		if ok {
+			thing.eventType = et
+			for _, c := range channels {
+				c <- thing
+			}
 		}
 	}
 }
@@ -141,5 +144,8 @@ func main() {
 	ch := make(chan event, 1000)
 	go dispatcher(ch)
 
-	monitorDB(ch)
+	flag.Parse()
+	dburl := flag.Arg(0)
+
+	monitorDB(dburl, ch)
 }
