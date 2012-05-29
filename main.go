@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -37,6 +39,24 @@ func logEvent(ch <-chan event) {
 	}
 }
 
+func sendHook(urls []string, ev event) {
+	bytes, err := json.Marshal(ev.Doc)
+	if err != nil {
+		log.Printf("Error encoding doc: %v", err)
+		return
+	}
+	jsonstring := string(bytes)
+	for _, u := range urls {
+		resp, err := http.PostForm(u, url.Values{"payload": {jsonstring}})
+		if err != nil {
+			log.Printf("Error posting to %v: %v", u, err)
+		} else {
+			resp.Body.Close()
+		}
+	}
+
+}
+
 func byActor(ch <-chan event) {
 	interesting := interestingConfig.ByActor
 	for thing := range ch {
@@ -44,6 +64,7 @@ func byActor(ch <-chan event) {
 			log.Printf("Handling byActor %v event for actor %v in %v/%v to %v",
 				thing.eventType, thing.actor, thing.owner, thing.repo,
 				list)
+			sendHook(list, thing)
 		}
 	}
 }
@@ -55,6 +76,7 @@ func byOwnerRepo(ch <-chan event) {
 		if list, ok := interesting[k]; ok {
 			log.Printf("Handling byOwnerRepo %v event in repo %v/%v by %v to %v",
 				thing.eventType, thing.owner, thing.repo, thing.actor, list)
+			sendHook(list, thing)
 		}
 	}
 }
@@ -65,6 +87,7 @@ func byOwner(ch <-chan event) {
 		if list, ok := interesting[thing.owner]; ok {
 			log.Printf("Handling byOwner %v event in repo %v/%v by %v to %v",
 				thing.eventType, thing.owner, thing.repo, thing.actor, list)
+			sendHook(list, thing)
 		}
 	}
 }
