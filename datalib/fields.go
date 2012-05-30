@@ -44,7 +44,6 @@ func Dochash(doc map[string]interface{}) string {
 		{"repository", "name"},
 		{"repository", "owner"},
 		{"repository", "organization"},
-		{"repository", "pushed_at"},
 		{"payload", "head"},
 		{"payload", "ref"},
 		{"payload", "ref_type"},
