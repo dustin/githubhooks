@@ -112,7 +112,12 @@ func dispatcher(ch <-chan event) {
 	for thing := range ch {
 		switch i := thing.Doc["repository"].(type) {
 		case map[string]interface{}:
-			thing.owner = fmt.Sprintf("%v", i["owner"])
+			switch o := i["owner"].(type) {
+			case string:
+				thing.owner = o
+			case map[string]interface{}:
+				thing.owner = fmt.Sprintf("%v", o["login"])
+			}
 			thing.repo = fmt.Sprintf("%v", i["name"])
 		}
 		switch i := thing.Doc["actor"].(type) {
