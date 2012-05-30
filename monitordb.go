@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"time"
 )
 
 func feedBody(r io.Reader, results chan<- event) int64 {
@@ -17,11 +18,9 @@ func feedBody(r io.Reader, results chan<- event) int64 {
 		thing := event{}
 		err := d.Decode(&thing)
 		if err != nil {
-			if err.Error() == "unexpected EOF" {
-				return largest
-			} else {
-				log.Fatalf("Error decoding stuff: %#v", err)
-			}
+			log.Printf("Error decoding:  %v", err)
+			time.Sleep(time.Second)
+			return largest
 		}
 		results <- thing
 		largest = thing.Seq
