@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"code.google.com/p/dsallings-couch-go"
@@ -14,6 +15,16 @@ import (
 )
 
 type event map[string]interface{}
+
+func buildRepository(repo map[string]interface{}) map[string]interface{} {
+	parts := strings.Split(repo["name"].(string), "/")
+	return map[string]interface{}{
+		"owner": parts[0],
+		"name":  parts[1],
+		"url":   repo["url"],
+		"stub":  true,
+	}
+}
 
 func process(r io.Reader, inmap, outmap map[string]bool,
 	ch chan<- event) (dups int) {
@@ -32,8 +43,13 @@ func process(r io.Reader, inmap, outmap map[string]bool,
 				e["actor"] = actorName
 			} else {
 				e["actor"] = ""
-				log.Printf("No actor name in %#v from\n%#v\n", i, e)
+				log.Printf("No actor name in %#v from\n%#v\n",
+					i, e)
 			}
+		}
+		switch i := e["repo"].(type) {
+		case map[string]interface{}:
+			e["repository"] = buildRepository(i)
 		}
 		githubdata.UpdateWithCustomFields(e)
 		stringed := fmt.Sprintf("%v", e["_id"])
