@@ -24,12 +24,18 @@ func process(r io.Reader, inmap, outmap map[string]bool,
 		log.Printf("Error decoding stuff: %v", err)
 	}
 	for _, e := range stuff {
-		githubdata.UpdateWithCustomFields(e)
 		switch i := e["actor"].(type) {
 		case map[string]interface{}:
 			e["actor_attributes"] = i
-			e["actor"] = i["login"].(string)
+			actorName, ok := i["login"].(string)
+			if ok {
+				e["actor"] = actorName
+			} else {
+				e["actor"] = ""
+				log.Printf("No actor name in %#v from\n%#v\n", i, e)
+			}
 		}
+		githubdata.UpdateWithCustomFields(e)
 		stringed := fmt.Sprintf("%v", e["_id"])
 		if _, ok := inmap[stringed]; !ok {
 			ch <- e
