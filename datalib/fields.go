@@ -11,12 +11,6 @@ import (
 	"time"
 )
 
-type fileData struct {
-	Filename  string    `json:"_id"`
-	Timestamp time.Time `json:"ts"`
-	Type      string    `json:"type"`
-}
-
 func maybeFatal(err error, msg ...string) {
 	if err != nil {
 		if len(msg) > 0 {
