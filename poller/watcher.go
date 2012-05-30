@@ -65,6 +65,13 @@ func fillRepository(repo map[string]interface{}) (map[string]interface{}, error)
 		return nil, err
 	}
 	err = json.Unmarshal(data, &rv)
+	if err == nil {
+		switch owner := rv["owner"].(type) {
+		case map[string]interface{}:
+			rv["owner_attributes"] = owner
+			rv["owner"] = owner["login"]
+		}
+	}
 	return rv, err
 }
 
