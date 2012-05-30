@@ -30,7 +30,7 @@ func findItem(key []string, m map[string]interface{}) string {
 	case map[string]interface{}:
 		return findItem(key[1:], v)
 	default:
-		return fmt.Sprintf("%v", v)
+		return ""
 	}
 	panic("How did we get here?")
 }
@@ -45,6 +45,13 @@ func Dochash(doc map[string]interface{}) string {
 		{"repository", "owner"},
 		{"repository", "organization"},
 		{"repository", "pushed_at"},
+		{"payload", "head"},
+		{"payload", "ref"},
+		{"payload", "ref_type"},
+		{"payload", "size"},
+		{"payload", "target", "login"},
+		{"payload", "forkee", "url"},
+		{"payload", "action"},
 	}
 	for _, f := range fields {
 		fmt.Fprintf(h, "%s", findItem(f, doc))
