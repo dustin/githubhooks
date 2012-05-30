@@ -5,14 +5,18 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"code.google.com/p/dsallings-couch-go"
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/dustin/githubhooks/datalib"
 )
+
+var mcdServer = flag.String("memcached", "localhost:11211", "Memcached to use.")
 
 type event map[string]interface{}
 
@@ -24,6 +28,44 @@ func buildRepository(repo map[string]interface{}) map[string]interface{} {
 		"url":   repo["url"],
 		"stub":  true,
 	}
+}
+
+func getData(url string) (rv []byte, err error) {
+	mc := memcache.New(*mcdServer)
+
+	itm, err := mc.Get(url)
+	if err != nil {
+		log.Printf("Fetching %v", url)
+		resp, err := http.Get(url)
+		if err != nil {
+			return rv, err
+		}
+		defer resp.Body.Close()
+		data, err := ioutil.ReadAll(resp.Body)
+
+		itm = &memcache.Item{
+			Key:        url,
+			Value:      data,
+			Expiration: (86400 * 15),
+		}
+		err = mc.Set(itm)
+		if err != nil {
+			log.Printf("Error caching %v: %v", url, err)
+		}
+	}
+	return itm.Value, nil
+}
+
+func fillRepository(repo map[string]interface{}) (map[string]interface{}, error) {
+	url := repo["url"].(string)
+
+	rv := map[string]interface{}{}
+	data, err := getData(url)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(data, &rv)
+	return rv, err
 }
 
 func process(r io.Reader, inmap, outmap map[string]bool,
@@ -49,7 +91,10 @@ func process(r io.Reader, inmap, outmap map[string]bool,
 		}
 		switch i := e["repo"].(type) {
 		case map[string]interface{}:
-			e["repository"] = buildRepository(i)
+			val, err := fillRepository(i)
+			if err == nil {
+				e["repository"] = val
+			}
 		}
 		githubdata.UpdateWithCustomFields(e)
 		stringed := fmt.Sprintf("%v", e["_id"])
