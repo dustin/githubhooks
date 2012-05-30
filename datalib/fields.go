@@ -54,6 +54,7 @@ func ParseDate(s string) (time.Time, error) {
 	formats := []string{
 		"2006/01/02 15:04:05 -0700",
 		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05-07:00",
 	}
 	for _, f := range formats {
 		t, err := time.Parse(f, s)

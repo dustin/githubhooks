@@ -80,6 +80,7 @@ type timeTestData struct {
 var testData = []timeTestData{
 	{"2012 05 29 22 45 20", "2012-05-29T22:45:20Z"},
 	{"2012 04 05 03 40 12", "2012/04/05 03:40:12 -0700"},
+	{"2012 05 29 15 10 06", "2012-05-29T15:10:06-07:00"},
 }
 
 func TestFormats(t *testing.T) {
