@@ -65,7 +65,7 @@ func getDoc(t *testing.T) map[string]interface{} {
 func TestIDGeneration(t *testing.T) {
 	doc := getDoc(t)
 	got := GenerateId(doc)
-	expected := "2012-04-05T03-40-13-d28d2e69c64055e"
+	expected := "2012-04-05T03-40-13-dd2a883e228530f4"
 	if got != expected {
 		t.Fatalf("Expected `%v', got `%v'", expected, got)
 	}

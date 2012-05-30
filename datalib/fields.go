@@ -2,7 +2,6 @@
 package githubdata
 
 import (
-	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"log"
@@ -23,9 +22,23 @@ func maybeFatal(err error, msg ...string) {
 
 func Dochash(doc map[string]interface{}) string {
 	h := fnv.New64()
-	e := json.NewEncoder(h)
-	err := e.Encode(doc)
-	maybeFatal(err, "Problem encoding doc for hash")
+	fields := []string{
+		"actor", "created_at",
+		"description", "type", "url",
+	}
+	for _, f := range fields {
+		fmt.Fprintf(h, "%v", doc[f])
+	}
+	switch repo := doc["repository"].(type) {
+	case map[string]interface{}:
+		morefields := []string{"description",
+			"name", "owner", "organization",
+			"pushed_at",
+		}
+		for _, f := range morefields {
+			fmt.Fprintf(h, "%v", repo[f])
+		}
+	}
 	return fmt.Sprintf("%x", h.Sum64())
 }
 
