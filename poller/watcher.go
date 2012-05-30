@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"code.google.com/p/dsallings-couch-go"
@@ -19,16 +18,6 @@ import (
 var mcdServer = flag.String("memcached", "localhost:11211", "Memcached to use.")
 
 type event map[string]interface{}
-
-func buildRepository(repo map[string]interface{}) map[string]interface{} {
-	parts := strings.Split(repo["name"].(string), "/")
-	return map[string]interface{}{
-		"owner": parts[0],
-		"name":  parts[1],
-		"url":   repo["url"],
-		"stub":  true,
-	}
-}
 
 func getData(url string) (rv []byte, err error) {
 	mc := memcache.New(*mcdServer)
