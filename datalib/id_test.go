@@ -86,7 +86,10 @@ func TestFormats(t *testing.T) {
 	for _, ttd := range testData {
 		date, err := ParseDate(ttd.Input)
 		s := date.Format("2006 01 02 15 04 05")
-		if err == nil && s != ttd.Expected {
+		if err != nil {
+			t.Fatalf("Error parsing %v (%v)",
+				ttd.Input, err)
+		} else if s != ttd.Expected {
 			t.Fatalf("Expected %v for %v, got %v",
 				ttd.Expected, ttd.Input, s)
 		}
