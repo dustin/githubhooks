@@ -135,6 +135,9 @@ func watchGithub(ch chan<- event) {
 				log.Printf("Error fetching from github: %v", err)
 			}
 			defer resp.Body.Close()
+			log.Printf("rate limit: %v/%v remaining",
+				resp.Header.Get("X-RateLimit-Remaining"),
+				resp.Header.Get("X-RateLimit-Limit"))
 
 			dups = process(resp.Body, seen, newmap, ch)
 			if dups == 0 {
