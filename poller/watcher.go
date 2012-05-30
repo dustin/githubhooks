@@ -25,6 +25,11 @@ func process(r io.Reader, inmap, outmap map[string]bool,
 	}
 	for _, e := range stuff {
 		githubdata.UpdateWithCustomFields(e)
+		switch i := e["actor"].(type) {
+		case map[string]interface{}:
+			e["actor_attributes"] = i
+			e["actor"] = i["login"].(string)
+		}
 		stringed := fmt.Sprintf("%v", e["_id"])
 		if _, ok := inmap[stringed]; !ok {
 			ch <- e
