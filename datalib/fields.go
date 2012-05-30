@@ -20,24 +20,34 @@ func maybeFatal(err error, msg ...string) {
 	}
 }
 
+func findItem(key []string, m map[string]interface{}) string {
+	if len(key) == 1 {
+		return fmt.Sprintf("%v", m[key[0]])
+	}
+	switch v := m[key[0]].(type) {
+	case nil:
+		return "<nil>"
+	case map[string]interface{}:
+		return findItem(key[1:], v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+	panic("How did we get here?")
+}
+
 func Dochash(doc map[string]interface{}) string {
 	h := fnv.New64()
-	fields := []string{
-		"actor", "created_at",
-		"description", "type", "url",
+	fields := [][]string{
+		{"actor"}, {"created_at"},
+		{"description"}, {"type"}, {"url"},
+		{"repository", "description"},
+		{"repository", "name"},
+		{"repository", "owner"},
+		{"repository", "organization"},
+		{"repository", "pushed_at"},
 	}
 	for _, f := range fields {
-		fmt.Fprintf(h, "%v", doc[f])
-	}
-	switch repo := doc["repository"].(type) {
-	case map[string]interface{}:
-		morefields := []string{"description",
-			"name", "owner", "organization",
-			"pushed_at",
-		}
-		for _, f := range morefields {
-			fmt.Fprintf(h, "%v", repo[f])
-		}
+		fmt.Fprintf(h, "%s", findItem(f, doc))
 	}
 	return fmt.Sprintf("%x", h.Sum64())
 }
