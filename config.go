@@ -8,7 +8,7 @@ import (
 
 type interestingList map[string][]string
 
-type allInteresting struct {
+type jsonConfig struct {
 	Actor     interestingList `json:"ByActor"`
 	Owner     interestingList `json:"ByOwner"`
 	OwnerRepo interestingList `json:"ByOwnerRepo"`
@@ -27,15 +27,15 @@ func fromIndex(i interestingList, key string, ev event) []string {
 	return []string{}
 }
 
-func (a *allInteresting) ByActor(ev event) []string {
+func (a *jsonConfig) ByActor(ev event) []string {
 	return fromIndex(a.Actor, ev.actor, ev)
 }
 
-func (a *allInteresting) ByOwner(ev event) []string {
+func (a *jsonConfig) ByOwner(ev event) []string {
 	return fromIndex(a.Owner, ev.owner, ev)
 }
 
-func (a *allInteresting) ByOwnerRepo(ev event) []string {
+func (a *jsonConfig) ByOwnerRepo(ev event) []string {
 	return fromIndex(a.OwnerRepo, fmt.Sprintf("%s/%s", ev.owner, ev.repo),
 		ev)
 }
@@ -45,7 +45,7 @@ func loadInteresting() Subscriber {
 	maybefatal(err, "Error opening config: %v", err)
 	defer f.Close()
 
-	rv := allInteresting{}
+	rv := jsonConfig{}
 
 	d := json.NewDecoder(f)
 	err = d.Decode(&rv)
