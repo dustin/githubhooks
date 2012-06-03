@@ -7,18 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 )
-
-type interestingList map[string][]string
-
-type allInteresting struct {
-	ByActor     interestingList
-	ByOwner     interestingList
-	ByOwnerRepo interestingList
-}
-
-var interestingConfig allInteresting
 
 type event struct {
 	Seq int64
@@ -29,15 +18,6 @@ type event struct {
 	owner     string
 	repo      string
 	eventType string
-}
-
-func logEvent(ch <-chan event) {
-	for _ = range ch {
-		/*
-			log.Printf("%v - %v/%v (%v)", thing.eventType, thing.owner,
-				thing.repo, thing.actor)
-		*/
-	}
 }
 
 func sendHook(urls []string, ev event) {
@@ -58,46 +38,28 @@ func sendHook(urls []string, ev event) {
 
 }
 
-func byActor(ch <-chan event) {
-	interesting := interestingConfig.ByActor
+func byActor(s Subscriber, ch <-chan event) {
 	for thing := range ch {
-		if list, ok := interesting[thing.actor]; ok {
-			log.Printf("Handling byActor %v event for actor %v in %v/%v to %v",
-				thing.eventType, thing.actor, thing.owner, thing.repo,
-				list)
-			sendHook(list, thing)
-		}
+		sendHook(s.ByActor(thing), thing)
 	}
 }
 
-func byOwnerRepo(ch <-chan event) {
-	interesting := interestingConfig.ByOwnerRepo
+func byOwnerRepo(s Subscriber, ch <-chan event) {
 	for thing := range ch {
-		k := fmt.Sprintf("%v/%v", thing.owner, thing.repo)
-		if list, ok := interesting[k]; ok {
-			log.Printf("Handling byOwnerRepo %v event in repo %v/%v by %v to %v",
-				thing.eventType, thing.owner, thing.repo, thing.actor, list)
-			sendHook(list, thing)
-		}
+		sendHook(s.ByOwnerRepo(thing), thing)
 	}
 }
 
-func byOwner(ch <-chan event) {
-	interesting := interestingConfig.ByOwner
+func byOwner(s Subscriber, ch <-chan event) {
 	for thing := range ch {
-		if list, ok := interesting[thing.owner]; ok {
-			log.Printf("Handling byOwner %v event in repo %v/%v by %v to %v",
-				thing.eventType, thing.owner, thing.repo, thing.actor, list)
-			sendHook(list, thing)
-		}
+		sendHook(s.ByOwner(thing), thing)
 	}
 }
 
-func dispatcher(ch <-chan event) {
+func dispatcher(s Subscriber, ch <-chan event) {
 
 	channels := map[string]chan event{}
-	handlers := map[string]func(<-chan event){
-		"log":         logEvent,
+	handlers := map[string]func(Subscriber, <-chan event){
 		"byactor":     byActor,
 		"byowner":     byOwner,
 		"byownerrepo": byOwnerRepo,
@@ -105,7 +67,7 @@ func dispatcher(ch <-chan event) {
 
 	for name, fun := range handlers {
 		c := make(chan event, 1000)
-		go fun(c)
+		go fun(s, c)
 		channels[name] = c
 	}
 
@@ -134,20 +96,10 @@ func dispatcher(ch <-chan event) {
 	}
 }
 
-func loadInteresting() {
-	f, err := os.Open("config.json")
-	maybefatal(err, "Error opening config: %v", err)
-	defer f.Close()
-
-	d := json.NewDecoder(f)
-	err = d.Decode(&interestingConfig)
-	maybefatal(err, "Error reading config: %v", err)
-}
-
 func main() {
-	loadInteresting()
+	s := loadInteresting()
 	ch := make(chan event, 1000)
-	go dispatcher(ch)
+	go dispatcher(s, ch)
 
 	flag.Parse()
 	dburl := flag.Arg(0)
