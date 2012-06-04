@@ -21,12 +21,17 @@ type event struct {
 }
 
 func sendHook(urls []string, ev event) {
+	if len(urls) == 0 {
+		return
+	}
 	bytes, err := json.Marshal(ev.Doc)
 	if err != nil {
 		log.Printf("Error encoding doc: %v", err)
 		return
 	}
 	jsonstring := string(bytes)
+	log.Printf("Sending hooks for %v on %v/%v with actor %v",
+		ev.eventType, ev.owner, ev.repo, ev.actor)
 	for _, u := range urls {
 		resp, err := http.PostForm(u, url.Values{"payload": {jsonstring}})
 		if err != nil {
