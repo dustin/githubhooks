@@ -22,10 +22,16 @@ type Subscriber interface {
 }
 
 func fromIndex(i interestingList, key string, ev event) []string {
-	if l, ok := i[key]; ok {
-		return l
+	l, ok := i[key]
+	if !ok {
+		l = []string{}
 	}
-	return []string{}
+
+	l2, ok := i[key+":"+ev.eventType]
+	if !ok {
+		l2 = []string{}
+	}
+	return append(l, l2...)
 }
 
 func (a *jsonConfig) ByActor(ev event) []string {

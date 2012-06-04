@@ -10,6 +10,7 @@ type Doc struct {
 	Trigger string
 	Target  string
 	Url     string
+	Events  *[]string
 }
 
 func updateDBConf(il interestingList, doc Doc) {
@@ -17,7 +18,13 @@ func updateDBConf(il interestingList, doc Doc) {
 	if !ok {
 		l = make([]string, 0, 1)
 	}
-	il[doc.Target] = append(l, doc.Url)
+	if doc.Events != nil && len(*doc.Events) > 1 {
+		for _, e := range *doc.Events {
+			il[doc.Target+":"+e] = append(l, doc.Url)
+		}
+	} else {
+		il[doc.Target] = append(l, doc.Url)
+	}
 }
 
 func loadInterestingCouch(dburl string) Subscriber {
