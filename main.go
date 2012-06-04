@@ -102,11 +102,14 @@ func dispatcher(s Subscriber, ch <-chan event) {
 }
 
 func main() {
-	s := loadInteresting()
+	configpath := flag.String("config", "config.json",
+		"Path to config.")
+	flag.Parse()
+
+	s := loadInteresting(*configpath)
 	ch := make(chan event, 1000)
 	go dispatcher(s, ch)
 
-	flag.Parse()
 	dburl := flag.Arg(0)
 
 	monitorDB(dburl, ch)

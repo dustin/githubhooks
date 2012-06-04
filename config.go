@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type interestingList map[string][]string
@@ -40,8 +41,8 @@ func (a *jsonConfig) ByOwnerRepo(ev event) []string {
 		ev)
 }
 
-func loadInteresting() Subscriber {
-	f, err := os.Open("config.json")
+func loadInterestingFile(path string) Subscriber {
+	f, err := os.Open(path)
 	maybefatal(err, "Error opening config: %v", err)
 	defer f.Close()
 
@@ -51,4 +52,11 @@ func loadInteresting() Subscriber {
 	err = d.Decode(&rv)
 	maybefatal(err, "Error reading config: %v", err)
 	return &rv
+}
+
+func loadInteresting(path string) Subscriber {
+	if strings.HasPrefix(path, "http:") {
+		return loadInterestingCouch(path)
+	}
+	return loadInterestingFile(path)
 }
