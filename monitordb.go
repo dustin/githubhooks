@@ -46,5 +46,5 @@ func monitorDB(dburl string, ch chan<- event) {
 			"include_docs": true,
 			"heartbeat":    5000,
 		})
-	maybefatal(err, "Error changesing: %v", err)
+	log.Fatalf("DB monitor exited with %v", err)
 }
