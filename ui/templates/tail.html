@@ -1,0 +1,14 @@
+<script src="../../js/prefix-loader.js"></script>
+<script type="text/javascript" charset="utf-8">
+  couchapp_prefix_load("../../");
+</script>
+<script src="../../js/ghooks.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+$.couch.app(function(app) {
+  initHookForm(app, "#newhook");
+  initDeletes(app);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<form id="newhook" method="post" action="#">
+  Add a hook
+  <select name="trigger">
+    <option value="ByOwner">by owner</option>
+    <option value="ByActor">by actor</option>
+    <option value="ByOwnerRepo">by owner/repo</option>
+  </select>
+  <input type="hidden" name="type" value="hook" />
+  Target: <input name="target" /><br/>
+  Destination: <input name="url" size="40" /><br/>
+  <input type="submit" value="Add" />
+</form>
