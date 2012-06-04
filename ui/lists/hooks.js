@@ -19,12 +19,17 @@ function(head, req) {
         send("<h1>List of Hooks</h1><ul id='hooks'>");
 
         while(row = getRow()) {
+            var subset = "";
+            if (row.doc.events) {
+                subset = "[" + row.doc.events.join(", ") + "]";
+            }
             send(Mustache.to_html(templates.hook, {
                 id: row.id,
                 rev: row.doc._rev,
                 trigger: row.doc.trigger,
                 url: row.doc.url,
                 target: row.doc.target,
+                subset: subset,
                 show: path.show('hook', row.id)
             }));
         }
