@@ -3,6 +3,12 @@ function initHookForm(app, t) {
     form.submit(function() {
         var fdoc = form.serializeObject();
         fdoc.created_at = new Date();
+
+        fdoc.events = [];
+        $('#hookevents :checked').each(function() {
+            fdoc.events.push($(this).val());
+        });
+
         app.db.saveDoc(fdoc, {
             success : function() {
                 form[0].reset();
