@@ -44,7 +44,6 @@ func monitorDB(dburl string, ch chan<- event) {
 			"since":        info.UpdateSeq,
 			"feed":         "continuous",
 			"include_docs": true,
-			"heartbeat":    5000,
 		})
 	log.Fatalf("DB monitor exited with %v", err)
 }
