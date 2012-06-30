@@ -45,27 +45,18 @@ func getData(url string) (rv []byte, err error) {
 	return itm.Value, nil
 }
 
-func fillRepository(repo map[string]interface{}) (map[string]interface{}, error) {
+func fillRepository(repo map[string]interface{}) (interface{}, error) {
 	url := repo["url"].(string)
 
-	rv := map[string]interface{}{}
 	data, err := getData(url)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(data, &rv)
-	if err == nil {
-		switch owner := rv["owner"].(type) {
-		case map[string]interface{}:
-			rv["owner_attributes"] = owner
-			rv["owner"] = owner["login"]
-		}
-	}
-	return rv, err
+	return json.RawMessage(data), nil
 }
 
-func process(r io.Reader, inmap, outmap map[string]bool,
-	ch chan<- event) (dups int) {
+func process(r io.Reader, ch chan<- event) (dups int) {
+	mc := memcache.New(*mcdServer)
 
 	stuff := []event{}
 	err := json.NewDecoder(r).Decode(&stuff)
@@ -94,22 +85,26 @@ func process(r io.Reader, inmap, outmap map[string]bool,
 		}
 		githubdata.UpdateWithCustomFields(e)
 		stringed := fmt.Sprintf("%v", e["_id"])
-		if _, ok := inmap[stringed]; !ok {
+		_, err = mc.Get(stringed)
+		if err == nil {
 			ch <- e
+			itm := &memcache.Item{
+				Key:        stringed,
+				Value:      []byte{},
+				Expiration: 300,
+			}
+			mc.Set(itm)
 		} else {
 			dups++
 		}
-		outmap[stringed] = true
 	}
 	return
 }
 
 func watchGithub(ch chan<- event) {
-	seen := map[string]bool{}
 	for {
 		dups := 0
 		page := 0
-		newmap := map[string]bool{}
 
 		for dups == 0 && page < 5 {
 			url := "https://api.github.com/events?per_page=100"
@@ -122,20 +117,18 @@ func watchGithub(ch chan<- event) {
 			resp, err := http.Get(url)
 			if err != nil {
 				log.Printf("Error fetching from github: %v", err)
+				break
 			}
 			defer resp.Body.Close()
 			log.Printf("rate limit: %v/%v remaining",
 				resp.Header.Get("X-RateLimit-Remaining"),
 				resp.Header.Get("X-RateLimit-Limit"))
 
-			dups = process(resp.Body, seen, newmap, ch)
+			dups = process(resp.Body, ch)
 			if dups == 0 {
 				log.Printf("No dups!  Need another page")
 			}
-			log.Printf("Now have %d dups tracked", len(newmap))
-		}
-		for k, v := range newmap {
-			seen[k] = v
+			log.Printf("found %d dups", dups)
 		}
 
 		time.Sleep(5 * time.Second)
