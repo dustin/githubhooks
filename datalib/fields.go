@@ -59,6 +59,9 @@ func Dochash(doc map[string]interface{}) string {
 }
 
 func GenerateId(doc map[string]interface{}) (rv string) {
+	if id, ok := doc["id"].(string); ok {
+		return fmt.Sprintf("event_%v", id)
+	}
 	parts := []string{}
 	ts := doc["created_at"].(string)
 	t, err := ParseDate(ts)
