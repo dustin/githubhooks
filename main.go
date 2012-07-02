@@ -20,7 +20,7 @@ type event struct {
 	eventType string
 }
 
-func sendHook(urls []string, ev event) {
+func sendHook(urls []string, which string, ev event) {
 	if len(urls) == 0 {
 		return
 	}
@@ -30,8 +30,8 @@ func sendHook(urls []string, ev event) {
 		return
 	}
 	jsonstring := string(bytes)
-	log.Printf("Sending hooks for %v %v on %v/%v with actor %v",
-		ev.Id, ev.eventType, ev.owner, ev.repo, ev.actor)
+	log.Printf("Sending %v hooks for %v %v on %v/%v with actor %v",
+		which, ev.Id, ev.eventType, ev.owner, ev.repo, ev.actor)
 	for _, u := range urls {
 		resp, err := http.PostForm(u, url.Values{"payload": {jsonstring}})
 		if err != nil {
@@ -45,19 +45,19 @@ func sendHook(urls []string, ev event) {
 
 func byActor(s Subscriber, ch <-chan event) {
 	for thing := range ch {
-		sendHook(s.ByActor(thing), thing)
+		sendHook(s.ByActor(thing), "byactor", thing)
 	}
 }
 
 func byOwnerRepo(s Subscriber, ch <-chan event) {
 	for thing := range ch {
-		sendHook(s.ByOwnerRepo(thing), thing)
+		sendHook(s.ByOwnerRepo(thing), "byownerrepo", thing)
 	}
 }
 
 func byOwner(s Subscriber, ch <-chan event) {
 	for thing := range ch {
-		sendHook(s.ByOwner(thing), thing)
+		sendHook(s.ByOwner(thing), "byowner", thing)
 	}
 }
 
