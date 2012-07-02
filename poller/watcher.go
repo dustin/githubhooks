@@ -52,7 +52,8 @@ func fillRepository(repo map[string]interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(data), nil
+	rm := json.RawMessage(data)
+	return &rm, nil
 }
 
 func process(r io.Reader, ch chan<- event) (dups int) {
