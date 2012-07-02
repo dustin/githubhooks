@@ -30,8 +30,8 @@ func sendHook(urls []string, ev event) {
 		return
 	}
 	jsonstring := string(bytes)
-	log.Printf("Sending hooks for %v on %v/%v with actor %v",
-		ev.eventType, ev.owner, ev.repo, ev.actor)
+	log.Printf("Sending hooks for %v %v on %v/%v with actor %v",
+		ev.Id, ev.eventType, ev.owner, ev.repo, ev.actor)
 	for _, u := range urls {
 		resp, err := http.PostForm(u, url.Values{"payload": {jsonstring}})
 		if err != nil {
