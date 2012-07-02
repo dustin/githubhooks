@@ -154,8 +154,7 @@ func logger(dburl string, ch <-chan event) {
 	}
 
 	for {
-		doc := <-ch
-		go store(db, doc)
+		go store(db, <-ch)
 	}
 }
 
