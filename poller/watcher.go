@@ -86,7 +86,7 @@ func process(r io.Reader, ch chan<- event) (dups int) {
 		githubdata.UpdateWithCustomFields(e)
 		stringed := fmt.Sprintf("%v", e["_id"])
 		_, err = mc.Get(stringed)
-		if err == nil {
+		if err != nil {
 			ch <- e
 			itm := &memcache.Item{
 				Key:        stringed,
