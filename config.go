@@ -13,12 +13,16 @@ type jsonConfig struct {
 	Actor     interestingList `json:"ByActor"`
 	Owner     interestingList `json:"ByOwner"`
 	OwnerRepo interestingList `json:"ByOwnerRepo"`
+
+	stale bool
 }
 
 type Subscriber interface {
 	ByActor(ev event) []string
 	ByOwner(ev event) []string
 	ByOwnerRepo(ev event) []string
+
+	Stale() bool
 }
 
 func fromIndex(i interestingList, key string, ev event) []string {
@@ -45,6 +49,10 @@ func (a *jsonConfig) ByOwner(ev event) []string {
 func (a *jsonConfig) ByOwnerRepo(ev event) []string {
 	return fromIndex(a.OwnerRepo, fmt.Sprintf("%s/%s", ev.owner, ev.repo),
 		ev)
+}
+
+func (a jsonConfig) Stale() bool {
+	return a.stale
 }
 
 func loadInterestingFile(path string) Subscriber {

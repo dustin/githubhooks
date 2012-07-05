@@ -9,6 +9,8 @@ import (
 	"net/url"
 )
 
+var configpath = flag.String("config", "config.json", "Path to config.")
+
 type event struct {
 	Seq int64
 	Id  string
@@ -77,6 +79,11 @@ func dispatcher(s Subscriber, ch <-chan event) {
 	}
 
 	for thing := range ch {
+		if s.Stale() {
+			log.Printf("Reloading config.")
+			s = loadInteresting(*configpath)
+		}
+
 		switch i := thing.Doc["repository"].(type) {
 		case map[string]interface{}:
 			switch o := i["owner"].(type) {
@@ -102,8 +109,6 @@ func dispatcher(s Subscriber, ch <-chan event) {
 }
 
 func main() {
-	configpath := flag.String("config", "config.json",
-		"Path to config.")
 	flag.Parse()
 
 	s := loadInteresting(*configpath)

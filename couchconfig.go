@@ -1,10 +1,17 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
 	"log"
+	"sync"
+	"time"
 
 	"code.google.com/p/dsallings-couch-go"
 )
+
+var confMonitor sync.Once
+var couchConfStaleness *bool
 
 type Doc struct {
 	Trigger string
@@ -24,6 +31,50 @@ func updateDBConf(il interestingList, doc Doc) {
 		}
 	} else {
 		il[doc.Target] = append(l, doc.Url)
+	}
+}
+
+func watchConfigChanges(dburl string) {
+	log.Printf("Watching for config changes in couchdb.")
+	first := true
+	for {
+		if !first {
+			time.Sleep(time.Second)
+		}
+		first = false
+
+		db, err := couch.Connect(dburl)
+		if err != nil {
+			log.Printf("Config watcher db connect error: %v", err)
+			continue
+		}
+
+		info, err := db.GetInfo()
+		if err != nil {
+			log.Printf("Config watcher info error: %v", err)
+			continue
+		}
+
+		err = db.Changes(func(r io.Reader) int64 {
+			d := json.NewDecoder(r)
+			largest := int64(0)
+
+			for {
+				out := struct{ Seq int64 }{}
+				err := d.Decode(&out)
+				if err != nil {
+					log.Printf("Stream error from config: %v", err)
+					return largest
+				}
+				log.Printf("Signaling a config change")
+				*couchConfStaleness = true
+			}
+			panic("This can't happen")
+		},
+			map[string]interface{}{
+				"since": info.UpdateSeq,
+				"feed":  "continuous",
+			})
 	}
 }
 
@@ -60,6 +111,12 @@ func loadInterestingCouch(dburl string) Subscriber {
 			log.Fatalf("Unknown trigger: %v", doc.Doc.Trigger)
 		}
 	}
+
+	couchConfStaleness = &conf.stale
+
+	confMonitor.Do(func() {
+		go watchConfigChanges(dburl)
+	})
 
 	return &conf
 }
