@@ -37,6 +37,7 @@ func updateDBConf(il interestingList, doc Doc) {
 func watchConfigChanges(dburl string) {
 	log.Printf("Watching for config changes in couchdb.")
 	first := true
+	largest := int64(0)
 	for {
 		if !first {
 			time.Sleep(time.Second)
@@ -49,15 +50,17 @@ func watchConfigChanges(dburl string) {
 			continue
 		}
 
-		info, err := db.GetInfo()
-		if err != nil {
-			log.Printf("Config watcher info error: %v", err)
-			continue
+		if largest == 0 {
+			info, err := db.GetInfo()
+			if err != nil {
+				log.Printf("Config watcher info error: %v", err)
+				continue
+			}
+			largest = info.UpdateSeq
 		}
 
 		err = db.Changes(func(r io.Reader) int64 {
 			d := json.NewDecoder(r)
-			largest := int64(0)
 
 			for {
 				out := struct{ Seq int64 }{}
@@ -72,7 +75,7 @@ func watchConfigChanges(dburl string) {
 			panic("This can't happen")
 		},
 			map[string]interface{}{
-				"since": info.UpdateSeq,
+				"since": largest,
 				"feed":  "continuous",
 			})
 	}
