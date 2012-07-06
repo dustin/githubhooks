@@ -10,6 +10,7 @@ import (
 )
 
 var configpath = flag.String("config", "config.json", "Path to config.")
+var statePath = flag.String("statepath", "", "Path to store sequence state.")
 
 type event struct {
 	Seq int64
@@ -117,5 +118,5 @@ func main() {
 
 	dburl := flag.Arg(0)
 
-	monitorDB(dburl, ch)
+	monitorDB(dburl, *statePath, ch)
 }

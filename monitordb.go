@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func feedBody(r io.Reader, results chan<- event) int64 {
+func feedBody(r io.Reader, sp *SequencePersister, results chan<- event) int64 {
 
 	largest := int64(0)
 
@@ -24,24 +24,40 @@ func feedBody(r io.Reader, results chan<- event) int64 {
 		}
 		results <- thing
 		largest = thing.Seq
+		sp.NewVal(largest)
 	}
 
 	return largest
 }
 
-func monitorDB(dburl string, ch chan<- event) {
+func monitorDB(dburl, statepath string, ch chan<- event) {
 	db, err := couch.Connect(dburl)
 	maybefatal(err, "Error connecting: %v", err)
 
-	info, err := db.GetInfo()
-	maybefatal(err, "Error getting info: %v", err)
-	log.Printf("Info %#v", info)
+	seqper := NewSequencePersister(statepath, time.Minute*5)
+
+	startSeq := seqper.Current()
+	go seqper.Run()
+
+	if startSeq == 0 {
+		info, err := db.GetInfo()
+		maybefatal(err, "Error getting info: %v", err)
+		log.Printf("Info %#v", info)
+		startSeq = info.UpdateSeq
+		seqper.NewVal(startSeq)
+	}
+
+	if startSeq != seqper.Current() {
+		seqper.WriteValue(startSeq)
+	}
+
+	log.Printf("Starting changes from %v", startSeq)
 
 	err = db.Changes(func(r io.Reader) int64 {
-		return feedBody(r, ch)
+		return feedBody(r, seqper, ch)
 	},
 		map[string]interface{}{
-			"since":        info.UpdateSeq,
+			"since":        startSeq,
 			"feed":         "continuous",
 			"include_docs": true,
 		})
