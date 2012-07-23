@@ -16,6 +16,7 @@ import (
 )
 
 var mcdServer = flag.String("memcached", "localhost:11211", "Memcached to use.")
+var maxPages = flag.Int("maxPages", 10, "Maximum number of pages to scan at once.")
 
 type event map[string]interface{}
 
@@ -56,7 +57,7 @@ func fillRepository(repo map[string]interface{}) (interface{}, error) {
 	return &rm, nil
 }
 
-func process(r io.Reader, ch chan<- event) (dups int) {
+func process(r io.Reader, ch chan<- event) (dups int, latest int64) {
 	mc := memcache.New(*mcdServer)
 
 	stuff := []event{}
@@ -96,6 +97,9 @@ func process(r io.Reader, ch chan<- event) (dups int) {
 			}
 			mc.Set(itm)
 		} else {
+			if v, ok := e["id"].(float64); ok {
+				latest = int64(v)
+			}
 			dups++
 		}
 	}
@@ -104,10 +108,11 @@ func process(r io.Reader, ch chan<- event) (dups int) {
 
 func watchGithub(ch chan<- event) {
 	for {
-		dups := 0
 		page := 0
+		latest := int64(0)
+		going := true
 
-		for dups == 0 && page < 5 {
+		for going && page < *maxPages {
 			url := "https://api.github.com/events?per_page=100"
 			if page > 0 {
 				url = fmt.Sprintf("%v&page=%d", url, page)
@@ -125,9 +130,11 @@ func watchGithub(ch chan<- event) {
 				resp.Header.Get("X-RateLimit-Remaining"),
 				resp.Header.Get("X-RateLimit-Limit"))
 
-			dups = process(resp.Body, ch)
-			if dups == 0 {
-				log.Printf("No dups!  Need another page")
+			dups, l := process(resp.Body, ch)
+			if l <= latest {
+				log.Printf("Stopping at %v,  %v", latest, l)
+				going = false
+				latest = l
 			}
 			log.Printf("found %d dups", dups)
 		}
