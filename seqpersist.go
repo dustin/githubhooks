@@ -45,11 +45,7 @@ func (s *SequencePersister) Run() {
 	t := time.NewTimer(s.Frequency)
 	for {
 		select {
-		case v, ok := <-s.ch:
-			if !ok {
-				return
-			}
-			s.latest = v
+		case s.latest = <-s.ch:
 		case <-t.C:
 			if s.latest != s.written {
 				s.WriteValue(s.latest)
