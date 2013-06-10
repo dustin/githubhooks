@@ -52,7 +52,7 @@ func dofile(fn string, db couch.Database) {
 	docs := make([]interface{}, 0, 10000)
 
 	fdata := fileData{Filename: filepath.Base(fn),
-		Timestamp: time.Now(),
+		Timestamp: time.Now().UTC(),
 		Type:      "importghfile",
 	}
 	docs = append(docs, fdata)
