@@ -42,15 +42,14 @@ func (s *SequencePersister) NewVal(i int64) {
 }
 
 func (s *SequencePersister) Run() {
-	t := time.NewTimer(s.Frequency)
+	t := time.Tick(s.Frequency)
 	for {
 		select {
 		case s.latest = <-s.ch:
-		case <-t.C:
+		case <-t:
 			if s.latest != s.written {
 				s.WriteValue(s.latest)
 			}
-			t = time.NewTimer(s.Frequency)
 		}
 	}
 }

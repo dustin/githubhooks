@@ -107,7 +107,7 @@ func process(r io.Reader, ch chan<- event) (dups int, latest int64) {
 }
 
 func watchGithub(ch chan<- event) {
-	for {
+	for _ = range time.Tick(5 * time.Second) {
 		page := 0
 		latest := int64(0)
 		going := true
@@ -132,14 +132,12 @@ func watchGithub(ch chan<- event) {
 
 			dups, l := process(resp.Body, ch)
 			if l <= latest {
-				log.Printf("Stopping at %v,  %v", latest, l)
+				log.Printf("Stopping at %v, %v", latest, l)
 				going = false
 				latest = l
 			}
 			log.Printf("found %d dups", dups)
 		}
-
-		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -160,8 +158,8 @@ func logger(dburl string, ch <-chan event) {
 		log.Fatalf("Could not connect to DB")
 	}
 
-	for {
-		go store(db, <-ch)
+	for e := range ch {
+		go store(db, e)
 	}
 }
 
