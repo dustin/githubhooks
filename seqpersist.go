@@ -15,6 +15,7 @@ type SequencePersister struct {
 	latest  int64
 	written int64
 	ch      chan int64
+	chr     chan chan int64
 }
 
 func NewSequencePersister(path string, freq time.Duration) *SequencePersister {
@@ -22,6 +23,7 @@ func NewSequencePersister(path string, freq time.Duration) *SequencePersister {
 		Path:      path,
 		Frequency: freq,
 		ch:        make(chan int64, 1000),
+		chr:       make(chan chan int64),
 	}
 	if path != "" {
 		b, err := ioutil.ReadFile(path)
@@ -46,6 +48,8 @@ func (s *SequencePersister) Run() {
 	for {
 		select {
 		case s.latest = <-s.ch:
+		case ch := <-s.chr:
+			ch <- s.latest
 		case <-t:
 			if s.latest != s.written {
 				s.WriteValue(s.latest)
@@ -75,5 +79,7 @@ func (s *SequencePersister) WriteValue(v int64) {
 }
 
 func (s *SequencePersister) Current() int64 {
-	return s.latest
+	ch := make(chan int64)
+	s.chr <- ch
+	return <-ch
 }
