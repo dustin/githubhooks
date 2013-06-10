@@ -29,10 +29,8 @@ func findItem(key []string, m map[string]interface{}) string {
 		return "<nil>"
 	case map[string]interface{}:
 		return findItem(key[1:], v)
-	default:
-		return ""
 	}
-	panic("How did we get here?")
+	return ""
 }
 
 func Dochash(doc map[string]interface{}) string {
