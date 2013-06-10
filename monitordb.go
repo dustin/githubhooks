@@ -26,8 +26,6 @@ func feedBody(r io.Reader, sp *SequencePersister, results chan<- event) int64 {
 		largest = thing.Seq
 		sp.NewVal(largest)
 	}
-
-	return largest
 }
 
 func monitorDB(dburl, statepath string, ch chan<- event) {

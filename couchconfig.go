@@ -72,7 +72,6 @@ func watchConfigChanges(dburl string) {
 				log.Printf("Signaling a config change")
 				*couchConfStaleness = true
 			}
-			panic("This can't happen")
 		},
 			map[string]interface{}{
 				"since": largest,
