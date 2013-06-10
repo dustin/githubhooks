@@ -56,22 +56,16 @@ func Dochash(doc map[string]interface{}) string {
 	return fmt.Sprintf("%x", h.Sum64())
 }
 
-func GenerateId(doc map[string]interface{}) (rv string) {
+func GenerateId(doc map[string]interface{}) string {
 	if id, ok := doc["id"].(string); ok {
 		return fmt.Sprintf("event_%v", id)
 	}
-	parts := []string{}
 	ts := doc["created_at"].(string)
 	t, err := ParseDate(ts)
 	maybeFatal(err)
 
-	parts = append(parts, t.Format("2006-01-02T15-04-05"))
-
-	parts = append(parts, Dochash(doc))
-
-	rv = strings.Join(parts, "-")
-
-	return
+	return strings.Join([]string{
+		t.Format("2006-01-02T15-04-05"), Dochash(doc)}, "-")
 }
 
 func ParseDate(s string) (time.Time, error) {
