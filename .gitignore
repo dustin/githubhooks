@@ -1,6 +1,7 @@
 #*
 *~
-config.json
+/download/download
 /githubhooks
-/poller/poller
 /loader/loader
+/poller/poller
+config.json
