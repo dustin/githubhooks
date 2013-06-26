@@ -23,6 +23,7 @@ type storage interface {
 var st storage
 
 var concurrency = flag.Int("c", 4, "Number of concurrent downlaods.")
+var cbfspath = flag.String("cbfs", "", "Path to store in cbfs")
 
 var wg = sync.WaitGroup{}
 
@@ -70,6 +71,13 @@ func main() {
 	flag.Parse()
 
 	st = fileStore{}
+	if *cbfspath != "" {
+		t, err := newCBFSStore(*cbfspath)
+		if err != nil {
+			log.Fatalf("Couldn't initialize cbfs store: %v", err)
+		}
+		st = t
+	}
 
 	start := time.Unix(beginning, 0)
 	end := time.Now()
