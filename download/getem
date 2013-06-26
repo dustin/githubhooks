@@ -1,0 +1,13 @@
+#!/bin/sh
+
+cd $HOME/tmp/github
+
+for ts in `./genfiles.py`
+do
+    fn="$ts.json.gz"
+    if [ ! -f $fn ]
+    then
+	echo "Getting $fn"
+	wget -q http://data.githubarchive.org/$fn
+    fi
+done
