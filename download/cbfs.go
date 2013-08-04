@@ -51,7 +51,7 @@ func (c cbfsStore) exists(fn string) bool {
 func (c cbfsStore) store(fn string) (io.WriteCloser, error) {
 	pr, pw := io.Pipe()
 
-	dest := c.client.Path(c.path + fn)
+	dest := c.client.URLFor(c.path + fn)
 	req, err := http.NewRequest("PUT", dest, pr)
 	if err != nil {
 		return nil, err
