@@ -82,7 +82,7 @@ func initLogger(slog bool) {
 
 func main() {
 	flag.Parse()
-	initLogger()
+	initLogger(*useSyslog)
 
 	st = fileStore{}
 	if *cbfspath != "" {
