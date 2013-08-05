@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/syslog"
 	"net/http"
 	"sync"
 	"time"
@@ -24,6 +25,7 @@ var st storage
 
 var concurrency = flag.Int("c", 4, "Number of concurrent downlaods.")
 var cbfspath = flag.String("cbfs", "", "Path to store in cbfs")
+var useSyslog = flag.Bool("syslog", false, "log to syslog")
 
 var wg = sync.WaitGroup{}
 
@@ -67,8 +69,20 @@ func downloader(ch chan time.Time) {
 	}
 }
 
+func initLogger(slog bool) {
+	if slog {
+		lw, err := syslog.New(syslog.LOG_INFO, "github-dl")
+		if err != nil {
+			log.Fatalf("Can't initialize syslog: %v", err)
+		}
+		log.SetOutput(lw)
+		log.SetFlags(0)
+	}
+}
+
 func main() {
 	flag.Parse()
+	initLogger()
 
 	st = fileStore{}
 	if *cbfspath != "" {
