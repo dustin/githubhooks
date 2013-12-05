@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"code.google.com/p/dsallings-couch-go"
+	"github.com/dustin/go-couch"
 )
 
 var confMonitor sync.Once

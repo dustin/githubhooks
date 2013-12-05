@@ -1,11 +1,12 @@
 package main
 
 import (
-	"code.google.com/p/dsallings-couch-go"
 	"encoding/json"
 	"io"
 	"log"
 	"time"
+
+	"github.com/dustin/go-couch"
 )
 
 func feedBody(r io.Reader, sp *SequencePersister, results chan<- event) int64 {
