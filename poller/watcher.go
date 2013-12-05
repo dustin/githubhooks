@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"time"
 
-	"code.google.com/p/dsallings-couch-go"
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/dustin/githubhooks/datalib"
+	"github.com/dustin/go-couch"
 )
 
 var mcdServer = flag.String("memcached", "localhost:11211", "Memcached to use.")

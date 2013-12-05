@@ -14,8 +14,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.google.com/p/dsallings-couch-go"
 	"github.com/dustin/githubhooks/datalib"
+	"github.com/dustin/go-couch"
 	"github.com/dustin/go-humanize"
 )
 
